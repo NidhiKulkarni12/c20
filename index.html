@@ -1,14 +1,82 @@
-<!DOCTYPE html><html><head>
-    <script src="p5.js"></script>
-    <script src="p5.dom.min.js"></script>
-    <script src="p5.sound.min.js"></script>
-<script src="./p5.play.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8">
-
-  </head>
-  <body>
-      <script src="sketch.js"></script>
-  
-
-</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MailCheck — Email delivery estimate</title>
+  <meta name="description" content="Check email formatting and mail-domain DNS records. No emails are sent.">
+  <style>
+    :root{--ink:#18212f;--muted:#667085;--line:#e4e8ef;--bg:#f5f7fb;--blue:#3457d5;--green:#087443;--red:#b42318;--amber:#9a6700}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#e8edff 0,transparent 35%),var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+    .wrap{max-width:1050px;margin:0 auto;padding:46px 22px 60px}.top{display:flex;align-items:center;gap:12px;margin-bottom:42px}.logo{display:grid;place-items:center;width:42px;height:42px;background:var(--blue);color:white;border-radius:13px;font-size:21px;font-weight:800;box-shadow:0 8px 20px #3457d533}.brand{font-size:18px;font-weight:800;letter-spacing:-.4px}.tag{font-size:12px;color:var(--muted)}
+    .hero{max-width:730px;margin-bottom:28px}.eyebrow{color:var(--blue);font-size:12px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase}.hero h1{font-size:clamp(34px,5vw,54px);line-height:1.07;letter-spacing:-2px;margin:12px 0}.hero p{color:var(--muted);font-size:17px;max-width:650px;margin:0}
+    .layout{display:grid;grid-template-columns: .95fr 1.05fr;gap:20px;align-items:start}.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 12px 40px #1d2a4410}.panel h2{font-size:17px;margin:0 0 5px;letter-spacing:-.3px}.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+    textarea{width:100%;height:230px;resize:vertical;border:1px solid #d7dce5;border-radius:12px;padding:14px;font:14px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);outline:none}textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #3457d51a}.hint{font-size:12px;color:var(--muted);margin:9px 0 17px}
+    button{border:0;border-radius:11px;padding:12px 16px;background:var(--blue);color:white;font-weight:750;cursor:pointer;font-size:14px}button:hover{filter:brightness(.95)}button:disabled{opacity:.55;cursor:wait}.secondary{background:white;border:1px solid var(--line);color:var(--ink)}.actions{display:flex;gap:10px;flex-wrap:wrap}
+    .legend{display:grid;gap:11px;margin-top:22px}.legendrow{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted)}.dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0}.green{background:#12a66a}.red{background:#e5484d}.amber{background:#e6a23c}
+    .results-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.count{font-size:12px;color:var(--muted);background:#f2f4f7;border-radius:99px;padding:5px 9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}.stat{padding:12px;border:1px solid var(--line);border-radius:12px}.stat strong{display:block;font-size:23px;letter-spacing:-1px}.stat span{font-size:11px;color:var(--muted)}.result-list{display:grid;gap:9px;max-height:410px;overflow:auto}.empty{border:1px dashed #d4dae5;border-radius:14px;padding:38px 18px;text-align:center;color:var(--muted);font-size:13px}.item{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}.email{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.reason{font-size:12px;color:var(--muted);margin-top:4px}.pill{white-space:nowrap;border-radius:99px;padding:4px 8px;font-size:10px;font-weight:800;letter-spacing:.3px}.pill.likely_delivered{background:#e8f7ef;color:var(--green)}.pill.likely_bounce{background:#fff0ef;color:var(--red)}.pill.unknown{background:#fff6df;color:var(--amber)}
+    .notice{margin-top:20px;background:#f8faff;border:1px solid #dfe6ff;border-radius:14px;padding:14px 16px;color:#4b5877;font-size:12px}.notice strong{color:#273b76}.foot{color:#8a93a5;font-size:11px;text-align:center;margin-top:28px}
+    @media(max-width:760px){.wrap{padding-top:28px}.layout{grid-template-columns:1fr}.hero h1{letter-spacing:-1.2px}.top{margin-bottom:30px}.panel{padding:19px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="logo">M</div><div><div class="brand">MailCheck</div><div class="tag">A cautious email deliverability estimate</div></div></div>
+  <section class="hero">
+    <div class="eyebrow">Quick check · No messages sent</div>
+    <h1>Know what looks deliverable.</h1>
+    <p>Check address formatting and whether each domain appears to have mail routing configured. MailCheck never sends an email or claims to verify a specific inbox.</p>
+  </section>
+  <main class="layout">
+    <section class="panel">
+      <h2>Paste your email list</h2>
+      <p class="sub">One address per line, or separate addresses with commas.</p>
+      <textarea id="emails" aria-label="Email addresses" placeholder="alex@example.com&#10;hello@gmail.com&#10;name@your-company.com"></textarea>
+      <div class="hint">Up to 200 addresses per check. Your list is processed for this request and not saved by the app.</div>
+      <div class="actions"><button id="checkBtn" onclick="runCheck()">Check addresses <span aria-hidden="true">→</span></button><button class="secondary" onclick="loadExample()">Try example</button></div>
+      <div class="legend">
+        <div class="legendrow"><span class="dot green"></span><span><strong>Likely delivered</strong> — valid format and a mail server was found for the domain. Inbox existence is not confirmed.</span></div>
+        <div class="legendrow"><span class="dot red"></span><span><strong>Likely bounce</strong> — invalid format or the domain appears not to support mail routing.</span></div>
+        <div class="legendrow"><span class="dot amber"></span><span><strong>Unknown</strong> — DNS results are inconclusive or the domain may use fallback routing.</span></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="results-head"><div><h2>Check results</h2><p class="sub" style="margin:4px 0 0">Your results appear here.</p></div><span class="count" id="resultCount">0 checked</span></div>
+      <div class="stats">
+        <div class="stat"><strong id="deliveredCount">—</strong><span>LIKELY DELIVERED</span></div>
+        <div class="stat"><strong id="bounceCount">—</strong><span>LIKELY BOUNCE</span></div>
+        <div class="stat"><strong id="unknownCount">—</strong><span>UNKNOWN</span></div>
+      </div>
+      <div class="result-list" id="results"><div class="empty">Your email results will show here.<br>Paste a list and select <strong>Check addresses</strong>.</div></div>
+      <div class="notice"><strong>Important:</strong> A domain-level check cannot prove that a mailbox exists or that a message will reach the inbox. Recipient servers may reject messages for many reasons.</div>
+    </section>
+  </main>
+  <div class="foot">MailCheck · Estimates only · No SMTP probing · No emails sent</div>
+</div>
+<script>
+const labels = {likely_delivered:"LIKELY DELIVERED", likely_bounce:"LIKELY BOUNCE", unknown:"UNKNOWN"};
+function loadExample(){document.getElementById('emails').value='hello@gmail.com\\nnot-an-email\\ncontact@example.invalid';}
+async function runCheck(){
+  const btn=document.getElementById('checkBtn'), text=document.getElementById('emails').value;
+  btn.disabled=true; btn.textContent='Checking…';
+  try{
+    const res=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails:text})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Unable to check this list.');
+    render(data.results);
+  }catch(e){document.getElementById('results').innerHTML='<div class="empty">'+escapeHtml(e.message)+'</div>';document.getElementById('resultCount').textContent='Check failed';}
+  finally{btn.disabled=false;btn.innerHTML='Check addresses <span aria-hidden="true">→</span>';}
+}
+function render(items){
+  const counts={likely_delivered:0,likely_bounce:0,unknown:0};
+  items.forEach(x=>counts[x.status]++);
+  document.getElementById('deliveredCount').textContent=counts.likely_delivered;
+  document.getElementById('bounceCount').textContent=counts.likely_bounce;
+  document.getElementById('unknownCount').textContent=counts.unknown;
+  document.getElementById('resultCount').textContent=items.length+' checked';
+  document.getElementById('results').innerHTML=items.map(x=>`<div class="item"><div><div class="email">${escapeHtml(x.email)}</div><div class="reason">${escapeHtml(x.reason)}</div></div><span class="pill ${x.status}">${labels[x.status]}</span></div>`).join('');
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+</body>
+</html>
